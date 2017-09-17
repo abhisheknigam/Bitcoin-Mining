@@ -5,6 +5,7 @@ defmodule KV do
     args |> parse_args 
     #|> process
   end
+  
   def process([]) do
       IO.puts "No arguments given"
   end
@@ -14,51 +15,28 @@ defmodule KV do
       c = options[:name]      
   end
    
-  # def start_link do
-  #   #Task.start_link(fn -> loop(%{}) end)
-  #   # parent = self()
-  #   #Task.start_link(fn -> sendMsg(parent) end)
-  #   #get_str_from_server()
-  #   IO.puts "keyurr "
-
-  #   for x <- 0..20000 do
-  #     Task.async(fn ->
-  #       pid1 = spawn fn -> KV.get_str_from_server() end 
-  #       IO.inspect (pid1)       
-  #     end)
-      
-  #   end  
-      
-  #   IO.puts "keyurr end "
-  #   pid1 = spawn fn -> KV.get_str_from_server() end
-  #   IO.inspect (pid1)
-  #   pid2 = spawn get_str_from_server
-  #   IO.inspect (pid2) 
-  # end
-
   def get_str_from_server(server_name) do
-    
-        {:news,str,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"},:infinity)
-        {:p_val,ret,hashed} = process_sha_256(str,size)  
-        if(ret == "") do
-          #GenServer.cast({:chat_room,:"karan@192.168.0.147"},{:print_answer,""})
-        else 
-          IO.puts "Found coin : "<>str
-          GenServer.cast({:chat_room,String.to_atom(server_name)},{:print_answer,{:p_val,ret,hashed}})
-        end
-      
-    
+    try do
+      {:news,str,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"}, 20000)
+      {:p_val,ret,hashed} = process_sha_256(str,size)  
+      if(ret == "") do
+        #GenServer.cast({:chat_room,:"karan@192.168.0.147"},{:print_answer,""})
+      else 
+        IO.puts "Found coin : "<>str
+        GenServer.cast({:chat_room,String.to_atom(server_name)},{:print_answer,{:p_val,ret,hashed}})
+      end
+    catch
+      :exit, _ -> "not really"
+    rescue _ -> :ok
+    end
     get_str_from_server(server_name)
   end
 
   def process_sha_256(str,l) do
     hashed = :crypto.hash(:sha256,str) |> Base.encode16
     
-    #IO.puts "#{hashed}"
     substr = String.slice hashed, 0..l-1
-    #IO.puts "#{substr}"
     substr_chck = String.duplicate("0",l)
-    #IO.puts "#{substr_chck}"
     if substr == substr_chck do      
       {:p_val,str,hashed}
     else
@@ -70,13 +48,8 @@ defmodule KV do
       {options, _, _} = OptionParser.parse(args,
         switches: [name: :string]
       )
-      #IO.puts "#{options[:name]}"
-      
-       #options
-       #IO.puts("hello")
        ipaddr = to_string options[:name]
        if(String.contains?(ipaddr,".") == true) do
-           
           start_client(ipaddr)
       else
           start_server(elem(Integer.parse(ipaddr),0)) 
@@ -98,25 +71,23 @@ defmodule KV do
     Node.get_cookie |> IO.puts
     Node.set_cookie :"choco"
     Node.get_cookie |> IO.puts
-    #Node.connect(:"karan@192.168.0.147") 
-   
-
-    #connection end
-
 
     IO.puts "server started "
-    
     GenServer.start_link(__MODULE__, k, name: :chat_room)
     IO.puts "genserver started"
-    call_from_server(server_name)
+    server_mining()
     IO.gets ""
   end
 
   def get_ip_addr do
     {:ok,lst} = :inet.getif() 
-    {x,:undefined,y} = List.last(lst)
+    x = elem(List.first(lst),0)
     addr =  to_string(elem(x,0)) <> "." <>  to_string(elem(x,1)) <> "." <>  to_string(elem(x,2)) <> "." <>  to_string(elem(x,3))
     addr  
+  end
+
+  def server_mining() do
+    start_client(get_ip_addr)
   end
 
   def start_client(server_ip) do
@@ -134,48 +105,26 @@ defmodule KV do
     server_name = "keyur@"<>server_ip
     IO.puts server_name
     Node.connect(String.to_atom(server_name)) 
-   
 
     #connection end
 
 
-      IO.puts "client started "
+    IO.puts "client started "
     
-        for x <- 0..200000 do
+        for x <- 0..50000 do
 
-          pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
-         # IO.inspect (pid1) 
-          # Task.async(fn ->
-          #   pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
-          #   IO.inspect (pid1)       
-          # end)
+          #Task.async(fn ->
+            pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
+            IO.inspect (pid1)       
+          #end)
           
         end  
           
         IO.puts "keyurr end "
         get_str_from_server(server_name)
-        #IO.inspect (pid1)
         
   end
 
-  def call_from_server(server_name) do
-    IO.puts "client started "
-    
-
-        for x <- 0..100000 do
-          pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
-          IO.inspect (pid1) 
-          # Task.async(fn ->
-          #   pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
-          #   IO.inspect (pid1)       
-          # end)
-          
-        end  
-          
-        IO.puts "keyurr end "
-        get_str_from_server(server_name)
-      
-  end
 
   ##server functions
     def init(count) do
@@ -221,23 +170,6 @@ defmodule KV do
       new = String.slice new_message , 0..3
       {:reply, new, messages}
     end
-      
-    
-    # def get_messages do
-    #   GenServer.call(:chat_room, :get_messages)
-    # end
-
- 
-
- 
-
-  
-
-
-  
-
-  
-
 end
 
 
