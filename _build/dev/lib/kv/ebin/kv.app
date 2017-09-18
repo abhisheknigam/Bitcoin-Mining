@@ -1,7 +1,7 @@
 {application,kv,
              [{applications,[kernel,stdlib,elixir,logger]},
               {description,"kv"},
-              {modules,['Elixir.Basic','Elixir.KV','Elixir.KV1',
+              {modules,['Elixir.Basic','Elixir.KV','Elixir.KV2',
                         'Elixir.Server','Elixir.Testclient',
                         'Elixir.Testserver']},
               {registered,[]},

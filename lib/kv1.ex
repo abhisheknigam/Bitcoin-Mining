@@ -1,4 +1,4 @@
-defmodule KV do 
+defmodule KV2 do 
   use GenServer
 
   def main(args) do
@@ -25,7 +25,7 @@ defmodule KV do
     #try do
       #{:news,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"}, :infinity)
      # size = 5
-      str = generate_string1
+      str = generate_string
       {:p_val,ret,hashed} = process_sha_256(str,size)  
       if(ret == "") do
         #GenServer.cast({:chat_room,:"karan@192.168.0.147"},{:print_answer,""})
@@ -74,7 +74,6 @@ defmodule KV do
    end
    
   def start_server(k) do
-    #Process.flag(:trap_exit, true)
     server_name = "keyur@"<>get_ip_addr
     IO.puts server_name<>":: server  will start"
 
@@ -86,7 +85,6 @@ defmodule KV do
     Node.get_cookie |> IO.puts
 
     IO.puts "server started "
-    GenServer.start_link(__MODULE__, k, name: :chat_room)
     GenServer.start_link(__MODULE__, k, name: :chat_room)
     IO.puts "genserver started"
     server_mining()
@@ -106,8 +104,6 @@ defmodule KV do
   end
 
   def start_client(server_ip) do
-    #connection 
-    #Process.flag(:trap_exit, true)
     k =  "keyur@" <> get_ip_addr
     
     IO.puts k<>":: node will start" 
@@ -160,15 +156,17 @@ defmodule KV do
     def handle_cast({:add_message ,new_message}, messages) do
       {:noreply, [new_message | messages]}
       end
-    def generate_string1 do
-        x = Enum.to_list(0..9)
-        y = for n <- ?a..?z, do: << n :: utf8 >>
-        z = x++y
-        cg = Enum.join(Enum.shuffle(z))
-        len = Enum.random(Enum.concat([15..20]))
-        cg_sub = String.slice cg, 0..len
-      end
-    def generate_string1 do
+    
+    # def generate_string1 do
+    #     x = Enum.to_list(0..9)
+    #     y = for n <- ?a..?z, do: << n :: utf8 >>
+    #     z = x++y
+    #     cg = Enum.join(Enum.shuffle(z))
+    #     len = Enum.random(Enum.concat([15..20]))
+    #     cg_sub = String.slice cg, 0..len
+    #   end
+    
+    def generate_string do
       length=20
       cg_sub = :crypto.strong_rand_bytes(length) |> Base.encode64 |> binary_part(0, 20)
       cg_str = "karanacharekar;"<> cg_sub 
@@ -184,7 +182,6 @@ defmodule KV do
     end
 
     def handle_cast({:print_answer ,new_message},messages) do
-      #x = Task.async(fn -> print_string(new_message, messages) end)
       {:p_val,a,b} = new_message
       IO.puts " #{a} #{b}"
       {:noreply, messages}
