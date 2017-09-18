@@ -161,7 +161,6 @@ defmodule KV do
       {:noreply, [new_message | messages]}
       end
     def generate_string1 do
-     # IO.puts " Executed #{new_message} at #{Node.self}  "
         x = Enum.to_list(0..9)
         y = for n <- ?a..?z, do: << n :: utf8 >>
         z = x++y
@@ -176,7 +175,6 @@ defmodule KV do
     end
 
     def handle_call({:print_message ,new_message}, _from,messages) do
-      #x= Task.async(&generate_string/0)
       {:reply, {:news,messages}, messages}
     end
       
