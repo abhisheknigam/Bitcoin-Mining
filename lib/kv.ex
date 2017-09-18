@@ -16,8 +16,9 @@ defmodule KV do
   end
    
   def get_str_from_server(server_name) do
-    try do
-      {:news,str,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"}, 20000)
+    #try do
+      {:news,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"}, :infinity)
+      str = generate_string1
       {:p_val,ret,hashed} = process_sha_256(str,size)  
       if(ret == "") do
         #GenServer.cast({:chat_room,:"karan@192.168.0.147"},{:print_answer,""})
@@ -25,12 +26,30 @@ defmodule KV do
         IO.puts "Found coin : "<>str
         GenServer.cast({:chat_room,String.to_atom(server_name)},{:print_answer,{:p_val,ret,hashed}})
       end
-    catch
-      :exit, _ -> "not really"
-    rescue _ -> :ok
-    end
+    #catch type, error ->
+     # {:error, {type, error}}
+      #:exit, _ -> "not really"
+      #pid1 = spawn_link fn -> KV.get_str_from_server(server_name) end
+      #IO.inspect (pid1)
+    #rescue
+     # e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
+    #after
+    #  IO.puts "The end!"
+     #pid1 = spawn_link fn -> KV.get_str_from_server(server_name) end
+    # IO.inspect (pid1)
+      #get_str_from_server(server_name)
+    #end
     get_str_from_server(server_name)
   end
+
+ def generate_string1 do
+    x = Enum.to_list(0..9)
+    y = for n <- ?a..?z, do: << n :: utf8 >>
+    z = x++y
+    cg = Enum.join(Enum.shuffle(z))
+    len = Enum.random(Enum.concat([30..50]))
+    cg_sub = String.slice cg, 0..len
+  end 
 
   def process_sha_256(str,l) do
     hashed = :crypto.hash(:sha256,str) |> Base.encode16
@@ -55,13 +74,9 @@ defmodule KV do
           start_server(elem(Integer.parse(ipaddr),0)) 
       end
    end
-
-   def start_serv(k) do
-    GenServer.start_link(__MODULE__, k, name: :chat_room)
-   end
    
   def start_server(k) do
-    
+    #Process.flag(:trap_exit, true)
     server_name = "keyur@"<>get_ip_addr
     IO.puts server_name<>":: server  will start"
 
@@ -74,10 +89,12 @@ defmodule KV do
 
     IO.puts "server started "
     GenServer.start_link(__MODULE__, k, name: :chat_room)
+    GenServer.start_link(__MODULE__, k, name: :chat_room2)
     IO.puts "genserver started"
     server_mining()
     IO.gets ""
   end
+
 
   def get_ip_addr do
     {:ok,lst} = :inet.getif() 
@@ -87,17 +104,24 @@ defmodule KV do
   end
 
   def server_mining() do
+    #spawn_link fn -> KV.system_loop end 
     start_client(get_ip_addr)
+  end
+
+  def system_loop do
+    generate_string1()
+    system_loop()  
   end
 
   def start_client(server_ip) do
     #connection 
+    #Process.flag(:trap_exit, true)
     k =  "keyur@" <> get_ip_addr
     
-    IO.puts k<>":: node will start"
-
+    IO.puts k<>":: node will start" 
     Node.start(String.to_atom(k))
     
+
     Node.self |> IO.puts
     Node.get_cookie |> IO.puts
     Node.set_cookie :"choco"
@@ -105,32 +129,26 @@ defmodule KV do
     server_name = "keyur@"<>server_ip
     IO.puts server_name
     Node.connect(String.to_atom(server_name)) 
-
     #connection end
 
-
     IO.puts "client started "
-    
-        for x <- 0..50000 do
-
-          #Task.async(fn ->
-            pid1 = spawn fn -> KV.get_str_from_server(server_name) end 
-            IO.inspect (pid1)       
-          #end)
+    for x <- 0..25 do
+        pid1 = spawn_link fn -> KV.get_str_from_server(server_name) end 
+        IO.inspect (pid1)       
+    end  
           
-        end  
-          
-        IO.puts "keyurr end "
-        get_str_from_server(server_name)
+    IO.puts "keyurr end "
+    get_str_from_server(server_name)
         
   end
 
 
   ##server functions
+
     def init(count) do
       {:ok, count}
     end
-    
+
     def add_message(message) do
       GenServer.cast(:chat_room, {:add_message, message})
     end
@@ -149,14 +167,24 @@ defmodule KV do
       {:noreply, [new_message | messages]}
       end
       
-    def handle_call({:print_message ,new_message}, _from,messages) do
+    def generate_string do
       length=20
       cg_sub = :crypto.strong_rand_bytes(length) |> Base.encode64 |> binary_part(0, 20)
-      cg_str = "karanacharekar;"<> cg_sub
-      {:reply, {:news, cg_str,messages}, messages}
+      cg_str = "karanacharekar;"<> cg_sub 
+    end
+
+    def handle_call({:print_message ,new_message}, _from,messages) do
+      #x= Task.async(&generate_string/0)
+      {:reply, {:news,messages}, messages}
     end
       
+    def print_string(new_message, messages) do
+      {:p_val,a,b} = new_message
+      IO.puts " #{a} #{b}"
+    end
+
     def handle_cast({:print_answer ,new_message},messages) do
+      #x = Task.async(fn -> print_string(new_message, messages) end)
       {:p_val,a,b} = new_message
       IO.puts " #{a} #{b}"
       {:noreply, messages}
@@ -165,11 +193,7 @@ defmodule KV do
     def handle_call(:get_messages, _from, messages) do
       {:reply, messages, messages}
     end
-      
-    def handle_call({:slice_message,new_message}, _from, messages) do
-      new = String.slice new_message , 0..3
-      {:reply, new, messages}
-    end
+
 end
 
 
