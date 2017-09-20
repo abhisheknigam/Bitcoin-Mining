@@ -3,11 +3,11 @@ defmodule KV.Mixfile do
 
   def project do
     [
-      app: :kv,
+      app: :project1,
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env == :prod,
-      escript: [main_module: KV],
+      escript: [main_module: project1],
       deps: deps()
     ]
   end

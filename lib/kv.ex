@@ -1,33 +1,30 @@
-defmodule KV do 
+defmodule project1 do 
   use GenServer
 
   def main(args) do
-    args |> parse_args 
-    #|> process
+    args |> process_arguments
   end
-  
-  def process([]) do
-      IO.puts "No arguments given"
-  end
-  
-  def process(options) do
-      IO.puts "Hello #{options[:name]}"
-      c = options[:name]      
-  end
-   
+
+  def process_arguments(arguments) do
+      {_, [input], _} = OptionParser.parse(arguments)
+        ipaddr = to_string input
+        if(String.contains?(ipaddr,".") == true) do
+           start_client(ipaddr)
+       else
+           start_server(elem(Integer.parse(ipaddr),0)) 
+       end
+   end
 
   def get_k_value(server_name) do
-    {:news,size} = GenServer.call({:chat_room,String.to_atom(server_name)},{:print_message,"karan"}, :infinity)    
+    {:news,size} = GenServer.call({:bit_coin,String.to_atom(server_name)},{:print_message,"Keyur"}, :infinity)    
     size
   end
 
   def process_string(server_name,str,size) do
     try do
-        {:p_val,ret,hashed} = process_sha_256(str,size)  
-        if(ret == "") do
-          #GenServer.cast({:chat_room,:"karan@192.168.0.147"},{:print_answer,""})
-        else 
-          GenServer.cast({:chat_room,String.to_atom(server_name)},{:print_answer,{:p_val,ret,hashed}})
+        {:p_val,ret,hashed} = generate_sha(str,size)  
+        if(ret != "") do
+          GenServer.cast({:bit_coin,String.to_atom(server_name)},{:print_answer,{:p_val,ret,hashed}})
         end
       rescue
         e in RuntimeError -> IO.puts("An error occurred: " <> e.message)
@@ -44,19 +41,19 @@ defmodule KV do
     end
   end
 
-  def max_res_util(server_name,size) do
+  def opt_util(server_name,size) do
     list = generate_string([])
     iterate_list(server_name,list,size)
-    max_res_util(server_name,size)
+    opt_util(server_name,size)
   end
 
   def get_str_from_server(server_name,size) do
-      {:str_list,list} = GenServer.call({:chat_room,String.to_atom(server_name)},{:get_string_list,"kd"}, :infinity) 
+      {:str_list,list} = GenServer.call({:bit_coin,String.to_atom(server_name)},{:get_string_list,"keyur"}, :infinity) 
       iterate_list(server_name,list,size)
       get_str_from_server(server_name,size)
   end
 
-  def process_sha_256(str,l) do
+  def generate_sha(str,l) do
     hashed = :crypto.hash(:sha256,str) |> Base.encode16
     substr = String.slice hashed, 0..l-1
     substr_chck = String.duplicate("0",l)
@@ -67,31 +64,29 @@ defmodule KV do
     end
   end
 
-  def parse_args(args) do
-      {options, _, _} = OptionParser.parse(args,
-        switches: [name: :string]
-      )
-       ipaddr = to_string options[:name]
-       if(String.contains?(ipaddr,".") == true) do
-          start_client(ipaddr)
-      else
-          start_server(elem(Integer.parse(ipaddr),0)) 
-      end
-   end
+  # def parse_args(args) do
+  #     {options, _, _} = OptionParser.parse(args,
+  #       switches: [name: :string]
+  #     )
+  #      ipaddr = to_string options[:name]
+  #      if(String.contains?(ipaddr,".") == true) do
+  #         start_client(ipaddr)
+  #     else
+  #         start_server(elem(Integer.parse(ipaddr),0)) 
+  #     end
+  #  end
    
   def start_server(k) do
-    server_name = "keyur@"<>get_ip_addr
-    IO.puts server_name<>":: server  will start"
+    server_name = "keyur@"<>get_ip_addr()
+    #IO.puts server_name<>":: server  will start"
 
     Node.start(String.to_atom(server_name))
     
-    Node.self |> IO.puts
-    Node.get_cookie |> IO.puts
     Node.set_cookie :"choco"
-    Node.get_cookie |> IO.puts
+    Node.get_cookie
 
     IO.puts "server started "
-    GenServer.start_link(__MODULE__, k, name: :chat_room)
+    GenServer.start_link(__MODULE__, k, name: :bit_coin)
     IO.puts "genserver started"
     server_mining()
     IO.gets ""
@@ -106,20 +101,17 @@ defmodule KV do
   end
 
   def server_mining() do
-    start_client(get_ip_addr)
+    start_client(get_ip_addr())
   end
 
   def start_client(server_ip) do
-    k =  "keyur@" <> get_ip_addr
+    k =  "keyur@" <> get_ip_addr()
     
-    IO.puts k<>":: node will start" 
+    #IO.puts k<>":: node will start" 
     Node.start(String.to_atom(k))
     
-
-    Node.self |> IO.puts
-    Node.get_cookie |> IO.puts
     Node.set_cookie :"choco"
-    Node.get_cookie |> IO.puts
+    Node.get_cookie
     server_name = "keyur@"<>server_ip
     IO.puts server_name
     Node.connect(String.to_atom(server_name)) 
@@ -128,11 +120,11 @@ defmodule KV do
     k_val = get_k_value(server_name)
     for x <- 0..8 do
         pid1 = spawn_link fn -> KV.get_str_from_server(server_name,k_val) end 
-        spawn_link fn -> KV.max_res_util(server_name,k_val) end
-        IO.inspect (pid1)       
+        spawn_link fn -> KV.opt_util(server_name,k_val) end
+        #IO.inspect (pid1)       
     end  
           
-    IO.puts "keyurr end "
+    #IO.puts "keyur end "
     get_str_from_server(server_name,k_val)
         
   end
@@ -145,22 +137,22 @@ defmodule KV do
     end
 
     def add_message(message) do
-      GenServer.cast(:chat_room, {:add_message, message})
+      GenServer.cast(:bit_coin, {:add_message, message})
     end
     def slice(message) do
-      GenServer.call(:chat_room, {:slice_message, message})
+      GenServer.call(:bit_coin, {:slice_message, message})
     end
     def print_message(message) do
 
-      GenServer.call(:chat_room, {:print_message, message})
+      GenServer.call(:bit_coin, {:print_message, message})
     end
     def get_string_list(message) do
 
-      GenServer.call(:chat_room, {:get_string_list, message})
+      GenServer.call(:bit_coin, {:get_string_list, message})
     end
     
     def print_answer(message) do
-      GenServer.cast(:chat_room, {:print_answer, message})
+      GenServer.cast(:bit_coin, {:print_answer, message})
     end
 
     # server callbacks
@@ -181,7 +173,7 @@ defmodule KV do
       String.slice cg, 0..len
       cg_str = "keyurbaldha;"<> cg_sub
       list  = [cg_str | list]
-      if length(list) < 100 do
+      if length(list) < 200 do
         generate_string(list)
       else
         list
@@ -193,7 +185,7 @@ defmodule KV do
     end
 
     def call_string_0 do
-        list = generate_string([])
+        generate_string([])
     end
 
     def handle_call({:get_string_list ,new_message}, _from, messages) do
@@ -215,14 +207,4 @@ defmodule KV do
     def handle_call(:get_messages, _from, messages) do
       {:reply, messages, messages}
     end
-
 end
-
-
-# Node.spawn_link :"karan@192.168.0.147", fn -> Example.add(2,3) end
-# {:ok, msgReader} = Task.start_link(fn -> KV.readMsg end)
-# iex --name "keyur@192.168.0.173" --cookie choco -S mix
-# pid = Node.spawn_link(:"keyur@192.168.0.173",KV, :readMsg, [])
-# send pid, {:another, "yes"}
-# mix escript.build
-# escript KV --name 192.168.0.173
